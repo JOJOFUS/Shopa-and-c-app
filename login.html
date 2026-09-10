@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Stock · login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a0a0a;
+            color: #f0e6e6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            width: 100%;
+            max-width: 380px;
+            background: #1f0f0f;
+            border-radius: 28px;
+            padding: 36px 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #4a1a1a;
+            border: 1px solid #5e1e1e;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .logo i { color: #ff2a2a; font-size: 1.8rem; margin-bottom: 8px; display: block; }
+        .logo h1 {
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
+            color: #ff4d4d;
+        }
+        .logo span {
+            display: block;
+            font-size: 0.8rem;
+            color: #9f5f5f;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #b57474;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .field input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #2e1212;
+            border: 1px solid #681f1f;
+            border-radius: 14px;
+            color: #f0e0e0;
+            font-weight: 500;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .field input:focus {
+            border-color: #d43b3b;
+            box-shadow: 0 0 0 3px #4f1515;
+        }
+        .btn-login {
+            width: 100%;
+            background: #b32828;
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 13px;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid #d43b3b;
+            transition: 0.15s;
+            box-shadow: 0 4px 0 #621717;
+            transform: translateY(-2px);
+            margin-top: 8px;
+        }
+        .btn-login:hover { background: #cc2f2f; box-shadow: 0 6px 0 #521212; transform: translateY(-3px); }
+        .btn-login:active { transform: translateY(2px); box-shadow: 0 1px 0 #521212; }
+        .btn-login:disabled { opacity: 0.5; transform: translateY(0); box-shadow: 0 2px 0 #621717; pointer-events: none; }
+        .error-msg {
+            background: #321010;
+            border: 1px solid #7f2a2a;
+            color: #ff9b9b;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error-msg.show { display: block; }
+        .footnote {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 0.72rem;
+            color: #754a4a;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <i class="fas fa-warehouse"></i>
+        <h1>Shop Stock Tracker</h1>
+        <span>ShopA &middot; ShopC</span>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form id="loginForm">
+        <div class="field">
+            <label><i class="fas fa-user"></i> Username</label>
+            <input type="text" id="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-login" id="loginBtn"><i class="fas fa-right-to-bracket"></i> Log in</button>
+    </form>
+
+    <div class="footnote"><i class="fas fa-cloud"></i> internal stock tracker</div>
+</div>
+
+<script>
+    (function() {
+        // ---------- CONFIG ----------
+        const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+
+        // Already logged in? skip straight to the dashboard.
+        if (localStorage.getItem('stockUser')) {
+            window.location.href = 'index.html';
+        }
+
+        async function attemptLogin(username, password) {
+            const formData = new URLSearchParams();
+            formData.append('action', 'login');
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message || 'Login failed');
+            return result.user;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            if (!username || !password) {
+                showError('Enter both a username and password.');
+                return;
+            }
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> checking…';
+            try {
+                const user = await attemptLogin(username, password);
+                localStorage.setItem('stockUser', user);
+                window.location.href = 'index.html';
+            } catch (err) {
+                showError(err.message);
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Log in';
+            }
+        });
+    })();
+</script>
+</body>
+</html>

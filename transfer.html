@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        if (!localStorage.getItem('stockUser')) { window.location.href = 'login.html'; }
+    </script>
+    <title>Shop Stock · transfer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a0a0a; color: #f0e6e6; min-height: 100vh; padding: 24px; }
+        .app { max-width: 720px; margin: 0 auto; background: #1f0f0f; border-radius: 32px; padding: 28px 30px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #4a1a1a; border: 1px solid #5e1e1e; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px 20px;
+            margin-bottom: 28px; border-bottom: 2px solid #8b1e1e; padding-bottom: 20px; }
+        .logo h1 { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.5px; color: #ff4d4d; text-shadow: 0 0 8px #7a1a1a; }
+        .logo i { color: #ff2a2a; margin-right: 8px; }
+        .user-pill { background: #2b0f0f; border: 1px solid #661c1c; padding: 8px 16px; border-radius: 40px; font-size: 0.85rem; color: #dba8a8; }
+        .user-pill strong { color: #ff9b9b; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .nav-link, .logout-link { color: #dba8a8; font-size: 0.9rem; text-decoration: none; background: #2f1212;
+            padding: 8px 16px; border-radius: 40px; border: 1px solid #661c1c; display: inline-flex; align-items: center;
+            gap: 6px; transition: 0.15s; cursor: pointer; font-family: inherit; }
+        .nav-link:hover, .logout-link:hover { background: #3d1414; border-color: #982a2a; }
+        .transfer-card { background: #1f0c0c; border-radius: 24px; padding: 20px 24px 24px; border: 1px solid #751f1f; box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+        .transfer-card h3 { color: #ff5e5e; font-weight: 600; font-size: 1.3rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .transfer-card h3 i { color: #ff2a2a; }
+        .direction-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 20px;
+            background: #150707; border: 1px solid #4a1a1a; border-radius: 18px; padding: 16px; }
+        .direction-shop { font-weight: 700; font-size: 1.1rem; color: #ff9b9b; background: #2f1212; padding: 8px 20px;
+            border-radius: 40px; border: 1px solid #661c1c; }
+        .direction-row i { color: #ff2a2a; font-size: 1.2rem; }
+        .swap-btn { background: #3d1414; border: 1px solid #6d2222; color: #f0cfcf; padding: 8px 12px; border-radius: 50%;
+            cursor: pointer; font-family: inherit; }
+        .swap-btn:hover { background: #521818; border-color: #982a2a; }
+        .transfer-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 20px; }
+        .field { flex: 1 0 140px; min-width: 120px; }
+        .field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #b57474; margin-bottom: 4px; font-weight: 600; }
+        .field select, .field input { width: 100%; padding: 10px 12px; background: #2e1212; border: 1px solid #681f1f;
+            border-radius: 14px; color: #f0e0e0; font-weight: 500; font-size: 0.9rem; outline: none; }
+        .field select:focus, .field input:focus { border-color: #d43b3b; box-shadow: 0 0 0 3px #4f1515; }
+        .field select option { background: #1c0a0a; color: #f0e0e0; }
+        .btn-transfer { background: #b32828; border: none; color: white; font-weight: 700; padding: 10px 30px; border-radius: 40px;
+            font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d43b3b;
+            transition: 0.15s; box-shadow: 0 4px 0 #621717; transform: translateY(-2px); }
+        .btn-transfer:hover { background: #cc2f2f; box-shadow: 0 6px 0 #521212; transform: translateY(-3px); }
+        .btn-transfer:active { transform: translateY(2px); box-shadow: 0 1px 0 #521212; }
+        .btn-transfer:disabled { opacity: 0.5; transform: translateY(0); box-shadow: 0 2px 0 #621717; pointer-events: none; }
+        .current-qty-note { margin-top: 14px; font-size: 0.85rem; color: #dba8a8; background: #2b0f0f; border: 1px solid #601d1d;
+            padding: 10px 14px; border-radius: 14px; display: none; }
+        .current-qty-note.show { display: block; }
+        .current-qty-note strong { color: #ff9b9b; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #2b0f0f; border: 1px solid #d43b3b;
+            color: #f0e0e0; padding: 14px 28px; border-radius: 60px; font-weight: 500; box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+            z-index: 999; display: none; max-width: 90%; text-align: center; }
+        .toast.show { display: block; }
+        .toast i { margin-right: 10px; color: #ff5e5e; }
+        @media (max-width: 480px) {
+            body { padding: 10px; } .app { padding: 16px 12px 28px; border-radius: 20px; }
+            .header { flex-direction: column; align-items: start; }
+            .transfer-card { padding: 16px 14px 18px; }
+            .transfer-grid { flex-direction: column; align-items: stretch; }
+            .field { min-width: 0; }
+            .btn-transfer { width: 100%; justify-content: center; }
+            .direction-row { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <div>
+            <div class="logo"><h1><i class="fas fa-warehouse"></i> Shop Stock</h1></div>
+            <span class="user-pill"><i class="fas fa-user"></i> logged in as <strong id="userLabel"></strong></span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link"><i class="fas fa-arrow-left"></i> inventory</a>
+            <a href="update.html" class="nav-link"><i class="fas fa-pen-to-square"></i> update</a>
+            <a href="history.html" class="nav-link"><i class="fas fa-clock-rotate-left"></i> history</a>
+            <button class="logout-link" id="logoutBtn"><i class="fas fa-arrow-right-from-bracket"></i> logout</button>
+        </div>
+    </div>
+
+    <div class="transfer-card">
+        <h3><i class="fas fa-right-left"></i> TRANSFER STOCK</h3>
+
+        <div class="direction-row">
+            <span class="direction-shop" id="fromShopLabel">ShopA</span>
+            <i class="fas fa-arrow-right"></i>
+            <span class="direction-shop" id="toShopLabel">ShopC</span>
+            <button class="swap-btn" id="swapBtn" title="swap direction"><i class="fas fa-right-left"></i></button>
+        </div>
+
+        <div class="transfer-grid">
+            <div class="field">
+                <label><i class="fas fa-tag"></i> Brand</label>
+                <select id="brandSelect"><option value="">— loading —</option></select>
+            </div>
+            <div class="field">
+                <label><i class="fas fa-ruler"></i> Size</label>
+                <select id="sizeSelect"><option value="">— select —</option></select>
+            </div>
+            <div class="field">
+                <label><i class="fas fa-cubes"></i> Qty to transfer</label>
+                <input type="number" id="qtyInput" placeholder="amount" value="1" min="1" step="1">
+            </div>
+            <button class="btn-transfer" id="transferBtn"><i class="fas fa-right-left"></i> TRANSFER</button>
+        </div>
+        <div class="current-qty-note" id="currentQtyNote"></div>
+    </div>
+</div>
+
+<div id="toast" class="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg">done</span></div>
+
+<script>
+    (function() {
+        // ---------- CONFIG ----------
+        const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+        const GOOGLE_SHEET_CSV_URL = 'PASTE_YOUR_PUBLISHED_STOCK_CSV_URL_HERE';
+        const SHOPS = ['ShopA', 'ShopC'];
+
+        const currentUser = localStorage.getItem('stockUser');
+        document.getElementById('userLabel').textContent = currentUser || '';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('stockUser');
+            window.location.href = 'login.html';
+        });
+
+        let inventory = [];
+        let isTransferring = false;
+        let fromShop = SHOPS[0];
+        let toShop = SHOPS[1];
+
+        const fromShopLabel = document.getElementById('fromShopLabel');
+        const toShopLabel = document.getElementById('toShopLabel');
+        const swapBtn = document.getElementById('swapBtn');
+        const brandSelect = document.getElementById('brandSelect');
+        const sizeSelect = document.getElementById('sizeSelect');
+        const qtyInput = document.getElementById('qtyInput');
+        const transferBtn = document.getElementById('transferBtn');
+        const currentQtyNote = document.getElementById('currentQtyNote');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+
+        function showToast(msg, isError = false) {
+            toastMsg.textContent = msg;
+            toast.style.display = 'block';
+            toast.style.borderColor = isError ? '#b33b3b' : '#43b33b';
+            toast.querySelector('i').className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        function updateDirectionLabels() {
+            fromShopLabel.textContent = fromShop;
+            toShopLabel.textContent = toShop;
+            updateCurrentQtyNote();
+        }
+
+        swapBtn.addEventListener('click', () => {
+            [fromShop, toShop] = [toShop, fromShop];
+            updateDirectionLabels();
+        });
+
+        function parseCSV(csvText) {
+            const rows = [];
+            let row = [], field = '', inQuotes = false;
+            for (let i = 0; i < csvText.length; i++) {
+                const ch = csvText[i];
+                if (ch === '"') {
+                    if (inQuotes && csvText[i + 1] === '"') { field += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (ch === ',' && !inQuotes) {
+                    row.push(field.trim()); field = '';
+                } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+                    if (ch === '\r' && csvText[i + 1] === '\n') i++;
+                    row.push(field.trim()); field = '';
+                    if (row.some(v => v !== '')) rows.push(row);
+                    row = [];
+                } else { field += ch; }
+            }
+            if (field !== '' || row.length) {
+                row.push(field.trim());
+                if (row.some(v => v !== '')) rows.push(row);
+            }
+            if (rows.length < 2) return [];
+            const headers = rows[0].map(h => h.trim());
+            return rows.slice(1).map(values => {
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    let val = values[idx] ?? '';
+                    if (h.toLowerCase() === 'qty') val = parseInt(String(val).replace(/,/g, ''), 10) || 0;
+                    obj[h] = val;
+                });
+                const shopKey = headers.find(h => h.toLowerCase() === 'shop');
+                const brandKey = headers.find(h => h.toLowerCase() === 'brand');
+                const sizeKey = headers.find(h => h.toLowerCase() === 'size');
+                const qtyKey = headers.find(h => h.toLowerCase() === 'qty');
+                return {
+                    Shop: shopKey ? obj[shopKey] : '',
+                    Brand: brandKey ? obj[brandKey] : '',
+                    Size: sizeKey ? obj[sizeKey] : '',
+                    QTY: qtyKey ? Number(obj[qtyKey]) || 0 : 0
+                };
+            }).filter(item => item.Brand || item.Size || item.Shop);
+        }
+
+        function populateSelects() {
+            const brandSet = new Set(inventory.map(i => i.Brand));
+            const currentBrand = brandSelect.value;
+            brandSelect.innerHTML = '<option value="">— brand —</option>' +
+                Array.from(brandSet).sort().map(b => `<option value="${b}">${b}</option>`).join('');
+            if (currentBrand && brandSet.has(currentBrand)) brandSelect.value = currentBrand;
+
+            const selectedBrand = brandSelect.value;
+            const sizeSet = new Set();
+            inventory.forEach(i => { if (selectedBrand === '' || i.Brand === selectedBrand) sizeSet.add(i.Size); });
+            const currentSize = sizeSelect.value;
+            sizeSelect.innerHTML = '<option value="">— size —</option>' +
+                Array.from(sizeSet).sort().map(s => `<option value="${s}">${s}</option>`).join('');
+            if (currentSize && sizeSet.has(currentSize)) sizeSelect.value = currentSize;
+
+            updateCurrentQtyNote();
+        }
+
+        function updateCurrentQtyNote() {
+            const brand = brandSelect.value;
+            const size = sizeSelect.value;
+            if (!brand || !size) { currentQtyNote.classList.remove('show'); return; }
+            const fromItem = inventory.find(i => i.Brand === brand && i.Size === size && i.Shop === fromShop);
+            const toItem = inventory.find(i => i.Brand === brand && i.Size === size && i.Shop === toShop);
+            const fromQty = fromItem ? fromItem.QTY : 0;
+            const toQty = toItem ? toItem.QTY : 0;
+            currentQtyNote.innerHTML = `<i class="fas fa-circle-info"></i> <strong>${brand} ${size}</strong> — ${fromShop}: <strong>${fromQty}</strong> · ${toShop}: <strong>${toQty}</strong>`;
+            currentQtyNote.classList.add('show');
+        }
+
+        async function writeTransfer(brand, size, qty) {
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action', 'transferStock');
+                formData.append('user', currentUser || '');
+                formData.append('fromShop', fromShop);
+                formData.append('toShop', toShop);
+                formData.append('brand', brand || '');
+                formData.append('size', size || '');
+                formData.append('qty', String(parseInt(qty, 10) || 0));
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message || 'Apps Script reported an error');
+                return true;
+            } catch (e) {
+                console.error('Transfer error:', e);
+                showToast('❌ Transfer failed: ' + e.message, true);
+                return false;
+            }
+        }
+
+        async function performTransfer() {
+            if (isTransferring) return;
+            const brand = brandSelect.value;
+            const size = sizeSelect.value;
+            const qty = parseInt(qtyInput.value, 10);
+
+            if (!brand || !size) { showToast('Please select Brand and Size.', true); return; }
+            if (isNaN(qty) || qty <= 0) { showToast('Enter a positive quantity to transfer.', true); return; }
+
+            const fromItem = inventory.find(i => i.Brand === brand && i.Size === size && i.Shop === fromShop);
+            const fromQty = fromItem ? fromItem.QTY : 0;
+            if (qty > fromQty) { showToast(`❌ ${fromShop} only has ${fromQty} in stock.`, true); return; }
+
+            isTransferring = true;
+            transferBtn.disabled = true;
+            transferBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> syncing…';
+
+            const success = await writeTransfer(brand, size, qty);
+            if (success) {
+                const toItem = inventory.find(i => i.Brand === brand && i.Size === size && i.Shop === toShop);
+                if (fromItem) fromItem.QTY -= qty;
+                if (toItem) toItem.QTY += qty;
+                else inventory.push({ Shop: toShop, Brand: brand, Size: size, QTY: qty });
+                updateCurrentQtyNote();
+                showToast(`✅ Moved ${qty} × ${brand} ${size}: ${fromShop} → ${toShop}`);
+            }
+
+            isTransferring = false;
+            transferBtn.disabled = false;
+            transferBtn.innerHTML = '<i class="fas fa-right-left"></i> TRANSFER';
+        }
+
+        async function loadInventory() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_CSV_URL, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                const parsed = parseCSV(csvText);
+                inventory = parsed;
+                populateSelects();
+            } catch (error) {
+                console.error('Load error:', error);
+                inventory = [];
+                brandSelect.innerHTML = '<option value="">— failed to load —</option>';
+                showToast('❌ Failed to load sheet data: ' + error.message, true);
+            }
+        }
+
+        function init() {
+            updateDirectionLabels();
+            loadInventory();
+            transferBtn.addEventListener('click', performTransfer);
+            brandSelect.addEventListener('change', populateSelects);
+            sizeSelect.addEventListener('change', updateCurrentQtyNote);
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>

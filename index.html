@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        if (!localStorage.getItem('stockUser')) { window.location.href = 'login.html'; }
+    </script>
+    <title>Shop Stock · inventory</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a0a0a; color: #f0e6e6; min-height: 100vh; padding: 24px; }
+        .app { max-width: 1200px; margin: 0 auto; background: #1f0f0f; border-radius: 32px; padding: 28px 30px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #4a1a1a; border: 1px solid #5e1e1e; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px 20px;
+            margin-bottom: 24px; border-bottom: 2px solid #8b1e1e; padding-bottom: 20px; }
+        .logo h1 { font-weight: 700; font-size: 1.7rem; letter-spacing: -0.5px; color: #ff4d4d; text-shadow: 0 0 8px #7a1a1a; }
+        .logo i { color: #ff2a2a; margin-right: 8px; }
+        .user-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .user-pill { background: #2b0f0f; border: 1px solid #661c1c; padding: 8px 16px; border-radius: 40px; font-size: 0.85rem; color: #dba8a8; }
+        .user-pill strong { color: #ff9b9b; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-link, .logout-link { color: #dba8a8; font-size: 0.9rem; text-decoration: none; background: #2f1212;
+            padding: 8px 16px; border-radius: 40px; border: 1px solid #661c1c; display: inline-flex; align-items: center;
+            gap: 6px; transition: 0.15s; cursor: pointer; font-family: inherit; }
+        .nav-link:hover, .logout-link:hover { background: #3d1414; border-color: #982a2a; }
+        .shop-filter { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+        .shop-filter button { background: #3d1414; padding: 8px 18px; border-radius: 40px; border: 1px solid #6d2222;
+            color: #f0cfcf; font-family: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.15s; }
+        .shop-filter button:hover { background: #521818; border-color: #982a2a; }
+        .shop-filter button.active { background: #b32828; border-color: #ff5e5e; color: #fff; box-shadow: 0 0 0 2px #4f1515; }
+        .stats { display: flex; flex-wrap: wrap; justify-content: space-between; background: #1b0b0b; padding: 16px 22px;
+            border-radius: 20px; margin: 16px 0 24px; border: 1px solid #601d1d; }
+        .stat-item { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+        .stat-item i { color: #e63e3e; width: 20px; }
+        .stat-item strong { color: #ff7b7b; font-weight: 700; margin-right: 4px; }
+        .search-bar { position: relative; margin-bottom: 16px; }
+        .search-bar i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #b57474; font-size: 0.9rem; }
+        .search-bar input { width: 100%; padding: 14px 18px 14px 44px; background: #1b0b0b; border: 1px solid #631d1d;
+            border-radius: 40px; color: #f0e0e0; font-weight: 500; font-size: 0.95rem; outline: none; }
+        .search-bar input:focus { border-color: #d43b3b; box-shadow: 0 0 0 3px #4f1515; }
+        .table-wrapper { background: #130707; border-radius: 24px; padding: 6px 4px 4px 4px; border: 1px solid #631d1d; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #1b0b0b; border-radius: 20px; overflow: hidden; }
+        th { text-align: left; padding: 16px 14px; background: #2d1010; color: #ff8f8f; font-weight: 600; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #751f1f; }
+        td { padding: 14px 14px; border-bottom: 1px solid #341212; color: #ebd6d6; }
+        tr:last-child td { border-bottom: none; }
+        .brand-tag { font-weight: 500; color: #f0c2c2; }
+        .size-tag { color: #dbb9b9; }
+        .shop-tag { background: #281010; padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; border: 1px solid #591d1d; color: #dba8a8; }
+        .qty-badge { background: #3b1515; padding: 4px 14px; border-radius: 40px; border: 1px solid #7f2828; font-weight: 600; color: #ffb3b3; }
+        .empty-row td { text-align: center; padding: 40px 10px; color: #896060; font-style: italic; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #2b0f0f; border: 1px solid #d43b3b;
+            color: #f0e0e0; padding: 14px 28px; border-radius: 60px; font-weight: 500; box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+            z-index: 999; display: none; max-width: 90%; text-align: center; }
+        .toast.show { display: block; }
+        .toast i { margin-right: 10px; color: #ff5e5e; }
+        @media (max-width: 480px) {
+            body { padding: 10px; } .app { padding: 16px 12px 28px; border-radius: 20px; }
+            .header { flex-direction: column; align-items: start; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tbody tr { background: #1b0b0b; border-bottom: 1px solid #341212; padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+            tbody tr.empty-row { display: block; padding: 30px 10px; }
+            td { border: none; padding: 0; }
+            td:before { content: attr(data-label); display: block; font-size: 0.65rem; text-transform: uppercase;
+                letter-spacing: 0.5px; color: #b57474; font-weight: 600; margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <div class="logo"><h1><i class="fas fa-warehouse"></i> Shop Stock</h1></div>
+        <div class="user-bar">
+            <span class="user-pill"><i class="fas fa-user"></i> logged in as <strong id="userLabel"></strong></span>
+            <div class="nav-links">
+                <a href="update.html" class="nav-link"><i class="fas fa-pen-to-square"></i> update</a>
+                <a href="transfer.html" class="nav-link"><i class="fas fa-right-left"></i> transfer</a>
+                <a href="history.html" class="nav-link"><i class="fas fa-clock-rotate-left"></i> history</a>
+                <button class="logout-link" id="logoutBtn"><i class="fas fa-arrow-right-from-bracket"></i> logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="shop-filter" id="shopFilter">
+        <button data-shop="" class="active">All shops</button>
+        <button data-shop="ShopA">ShopA</button>
+        <button data-shop="ShopC">ShopC</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item"><i class="fas fa-list"></i> <strong id="totalSku">0</strong> SKUs</div>
+        <div class="stat-item"><i class="fas fa-cubes"></i> <strong id="totalQty">0</strong> total units</div>
+        <div class="stat-item"><i class="fas fa-clock"></i> last loaded <strong id="lastUpdate">—</strong></div>
+    </div>
+
+    <div class="search-bar">
+        <i class="fas fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search brand or size…" autocomplete="off">
+    </div>
+
+    <div class="table-wrapper">
+        <table id="stockTable">
+            <thead><tr><th>Brand</th><th>Size</th><th>Qty</th><th>Shop</th></tr></thead>
+            <tbody id="tableBody">
+                <tr class="empty-row"><td colspan="4"><i class="fas fa-spinner fa-pulse"></i> loading stock …</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="toast" class="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg">done</span></div>
+
+<script>
+    (function() {
+        // ---------- CONFIG ----------
+        const GOOGLE_SHEET_CSV_URL = 'PASTE_YOUR_PUBLISHED_STOCK_CSV_URL_HERE';
+
+        let inventory = [];
+        let searchQuery = '';
+        let selectedShop = '';
+
+        document.getElementById('userLabel').textContent = localStorage.getItem('stockUser') || '';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('stockUser');
+            window.location.href = 'login.html';
+        });
+
+        const tbody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const totalSkuEl = document.getElementById('totalSku');
+        const totalQtyEl = document.getElementById('totalQty');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const shopFilterEl = document.getElementById('shopFilter');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+
+        function showToast(msg, isError = false) {
+            toastMsg.textContent = msg;
+            toast.style.display = 'block';
+            toast.style.borderColor = isError ? '#b33b3b' : '#43b33b';
+            toast.querySelector('i').className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
+
+        function parseCSV(csvText) {
+            const rows = [];
+            let row = [], field = '', inQuotes = false;
+            for (let i = 0; i < csvText.length; i++) {
+                const ch = csvText[i];
+                if (ch === '"') {
+                    if (inQuotes && csvText[i + 1] === '"') { field += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (ch === ',' && !inQuotes) {
+                    row.push(field.trim()); field = '';
+                } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+                    if (ch === '\r' && csvText[i + 1] === '\n') i++;
+                    row.push(field.trim()); field = '';
+                    if (row.some(v => v !== '')) rows.push(row);
+                    row = [];
+                } else { field += ch; }
+            }
+            if (field !== '' || row.length) {
+                row.push(field.trim());
+                if (row.some(v => v !== '')) rows.push(row);
+            }
+            if (rows.length < 2) return [];
+            const headers = rows[0].map(h => h.trim());
+            return rows.slice(1).map(values => {
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    let val = values[idx] ?? '';
+                    if (h.toLowerCase() === 'qty') val = parseInt(String(val).replace(/,/g, ''), 10) || 0;
+                    obj[h] = val;
+                });
+                const shopKey = headers.find(h => h.toLowerCase() === 'shop');
+                const brandKey = headers.find(h => h.toLowerCase() === 'brand');
+                const sizeKey = headers.find(h => h.toLowerCase() === 'size');
+                const qtyKey = headers.find(h => h.toLowerCase() === 'qty');
+                return {
+                    Shop: shopKey ? obj[shopKey] : '',
+                    Brand: brandKey ? obj[brandKey] : '',
+                    Size: sizeKey ? obj[sizeKey] : '',
+                    QTY: qtyKey ? Number(obj[qtyKey]) || 0 : 0
+                };
+            }).filter(item => item.Brand || item.Size || item.Shop);
+        }
+
+        function getFiltered() {
+            let items = inventory;
+            if (selectedShop) items = items.filter(i => i.Shop === selectedShop);
+            if (!searchQuery) return items;
+            const q = searchQuery.toLowerCase();
+            return items.filter(i => String(i.Brand).toLowerCase().includes(q) || String(i.Size).toLowerCase().includes(q));
+        }
+
+        function renderTable() {
+            if (!inventory.length) {
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="4"><i class="fas fa-database"></i> no stock data</td></tr>`;
+                totalSkuEl.textContent = 0; totalQtyEl.textContent = 0;
+                return;
+            }
+            const filtered = getFiltered();
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="4"><i class="fas fa-magnifying-glass"></i> no matches</td></tr>`;
+            } else {
+                let html = '';
+                filtered.forEach(item => {
+                    html += `<tr>
+                        <td data-label="Brand"><span class="brand-tag"><i class="fas fa-circle" style="color:#c53535; font-size:0.5rem; margin-right:6px;"></i>${item.Brand}</span></td>
+                        <td data-label="Size"><span class="size-tag">${item.Size}</span></td>
+                        <td data-label="Qty"><span class="qty-badge">${item.QTY}</span></td>
+                        <td data-label="Shop"><span class="shop-tag"><i class="fas fa-store" style="margin-right:4px;"></i>${item.Shop}</span></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+            const totalQty = filtered.reduce((acc, i) => acc + i.QTY, 0);
+            totalSkuEl.textContent = filtered.length;
+            totalQtyEl.textContent = totalQty;
+            lastUpdateEl.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        async function loadInventory() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_CSV_URL, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                const parsed = parseCSV(csvText);
+                if (!parsed.length) throw new Error('No data rows found.');
+                inventory = parsed;
+                renderTable();
+            } catch (error) {
+                console.error('Load error:', error);
+                inventory = [];
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="4"><i class="fas fa-triangle-exclamation"></i> unable to load stock data</td></tr>`;
+                showToast('❌ Failed to load sheet data: ' + error.message, true);
+            }
+        }
+
+        shopFilterEl.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedShop = btn.dataset.shop;
+                shopFilterEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+                renderTable();
+            });
+        });
+
+        searchInput.addEventListener('input', () => {
+            searchQuery = searchInput.value.trim();
+            renderTable();
+        });
+
+        loadInventory();
+    })();
+</script>
+</body>
+</html>

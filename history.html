@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        if (!localStorage.getItem('stockUser')) { window.location.href = 'login.html'; }
+    </script>
+    <title>Shop Stock · history</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a0a0a; color: #f0e6e6; min-height: 100vh; padding: 24px; }
+        .app { max-width: 1200px; margin: 0 auto; background: #1f0f0f; border-radius: 32px; padding: 28px 30px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #4a1a1a; border: 1px solid #5e1e1e; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px 20px;
+            margin-bottom: 28px; border-bottom: 2px solid #8b1e1e; padding-bottom: 20px; }
+        .logo h1 { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.5px; color: #ff4d4d; text-shadow: 0 0 8px #7a1a1a; }
+        .logo i { color: #ff2a2a; margin-right: 8px; }
+        .user-pill { background: #2b0f0f; border: 1px solid #661c1c; padding: 8px 16px; border-radius: 40px; font-size: 0.85rem; color: #dba8a8; }
+        .user-pill strong { color: #ff9b9b; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .nav-link, .logout-link { color: #dba8a8; font-size: 0.9rem; text-decoration: none; background: #2f1212;
+            padding: 8px 16px; border-radius: 40px; border: 1px solid #661c1c; display: inline-flex; align-items: center;
+            gap: 6px; transition: 0.15s; cursor: pointer; font-family: inherit; }
+        .nav-link:hover, .logout-link:hover { background: #3d1414; border-color: #982a2a; }
+        .search-bar { position: relative; margin-bottom: 20px; }
+        .search-bar i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #b57474; font-size: 0.9rem; }
+        .search-bar input { width: 100%; padding: 14px 18px 14px 44px; background: #1b0b0b; border: 1px solid #631d1d;
+            border-radius: 40px; color: #f0e0e0; font-weight: 500; font-size: 0.95rem; outline: none; }
+        .search-bar input:focus { border-color: #d43b3b; box-shadow: 0 0 0 3px #4f1515; }
+        .search-count { font-size: 0.75rem; color: #9f5f5f; margin: -10px 0 16px 6px; }
+        .table-wrapper { background: #130707; border-radius: 24px; padding: 6px 4px 4px 4px; border: 1px solid #631d1d; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #1b0b0b; border-radius: 20px; overflow: hidden; }
+        th { text-align: left; padding: 16px 14px; background: #2d1010; color: #ff8f8f; font-weight: 600; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #751f1f; }
+        td { padding: 14px 14px; border-bottom: 1px solid #341212; color: #ebd6d6; }
+        tr:last-child td { border-bottom: none; }
+        .brand-tag { font-weight: 500; color: #f0c2c2; }
+        .size-tag { color: #dbb9b9; }
+        .user-tag { background: #1a2a3d; padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; border: 1px solid #274a6d; color: #a8c8db; white-space: nowrap; }
+        .action-tag { padding: 4px 12px; border-radius: 30px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+        .action-tag.update { background: #28241a; border: 1px solid #6d5b27; color: #e0c968; }
+        .action-tag.transfer { background: #1a2a28; border: 1px solid #276d5f; color: #68e0c9; }
+        .movement-cell { white-space: nowrap; }
+        .change-badge { padding: 4px 14px; border-radius: 40px; font-weight: 700; border: 1px solid; white-space: nowrap; }
+        .change-badge.pos { background: #10321a; border-color: #2a7f45; color: #7bffa0; }
+        .change-badge.neg { background: #321010; border-color: #7f2a2a; color: #ff8f8f; }
+        .timestamp-cell { white-space: nowrap; color: #cfa9a9; }
+        .qty-note { font-size: 0.8rem; color: #cbb0b0; }
+        .empty-row td { text-align: center; padding: 40px 10px; color: #896060; font-style: italic; }
+        @media (max-width: 700px) {
+            body { padding: 10px; } .app { padding: 16px 12px 28px; border-radius: 20px; }
+            .header { flex-direction: column; align-items: start; margin-bottom: 20px; }
+            table { font-size: 0.82rem; } th, td { padding: 10px 8px; } th { font-size: 0.68rem; }
+        }
+        @media (max-width: 480px) {
+            .table-wrapper { border-radius: 16px; margin: 0 -4px; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tbody tr { background: #1b0b0b; border-bottom: 1px solid #341212; padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+            tbody tr.empty-row { display: block; padding: 30px 10px; }
+            td { border: none; padding: 0; }
+            td:before { content: attr(data-label); display: block; font-size: 0.65rem; text-transform: uppercase;
+                letter-spacing: 0.5px; color: #b57474; font-weight: 600; margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <div>
+            <div class="logo"><h1><i class="fas fa-clock-rotate-left"></i> Update history</h1></div>
+            <span class="user-pill"><i class="fas fa-user"></i> logged in as <strong id="userLabel"></strong></span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link"><i class="fas fa-arrow-left"></i> inventory</a>
+            <a href="update.html" class="nav-link"><i class="fas fa-pen-to-square"></i> update</a>
+            <a href="transfer.html" class="nav-link"><i class="fas fa-right-left"></i> transfer</a>
+            <button class="logout-link" id="logoutBtn"><i class="fas fa-arrow-right-from-bracket"></i> logout</button>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <i class="fas fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search brand, size, shop or user…" autocomplete="off">
+    </div>
+    <div class="search-count" id="searchCount" style="display:none;"></div>
+
+    <div class="table-wrapper">
+        <table id="historyTable">
+            <thead><tr><th>Date &amp; time</th><th>User</th><th>Action</th><th>Brand</th><th>Size</th><th>Shop(s)</th><th>Change</th><th>New Qty</th></tr></thead>
+            <tbody id="tableBody">
+                <tr class="empty-row"><td colspan="8"><i class="fas fa-spinner fa-pulse"></i> loading history …</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- CONFIG ----------
+        const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+
+        let history = [];
+        let searchQuery = '';
+
+        document.getElementById('userLabel').textContent = localStorage.getItem('stockUser') || '';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('stockUser');
+            window.location.href = 'login.html';
+        });
+
+        const tbody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const searchCountEl = document.getElementById('searchCount');
+
+        function formatTimestamp(ts) {
+            const d = new Date(ts);
+            if (isNaN(d.getTime())) return String(ts);
+            return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getFiltered() {
+            if (!searchQuery) return history;
+            const q = searchQuery.toLowerCase();
+            return history.filter(item =>
+                String(item.brand).toLowerCase().includes(q) ||
+                String(item.size).toLowerCase().includes(q) ||
+                String(item.shop).toLowerCase().includes(q) ||
+                String(item.toShop).toLowerCase().includes(q) ||
+                String(item.user).toLowerCase().includes(q)
+            );
+        }
+
+        function renderTable() {
+            if (!history.length) {
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="fas fa-inbox"></i> no updates logged yet</td></tr>`;
+                searchCountEl.style.display = 'none';
+                return;
+            }
+            const filtered = getFiltered();
+            if (searchQuery) {
+                searchCountEl.style.display = 'block';
+                searchCountEl.textContent = `${filtered.length} of ${history.length} entries match "${searchQuery}"`;
+            } else {
+                searchCountEl.style.display = 'none';
+            }
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="fas fa-magnifying-glass"></i> no matches for "${searchQuery}"</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(item => {
+                const isTransfer = item.action === 'Transfer';
+                const change = parseInt(item.change, 10) || 0;
+                const isPos = isTransfer ? true : change >= 0;
+                const changeText = isTransfer ? `${change}` : (change >= 0 ? `+${change}` : `${change}`);
+                const movement = isTransfer ? `${item.shop} <i class="fas fa-arrow-right" style="font-size:0.7rem;margin:0 4px;"></i> ${item.toShop}` : item.shop;
+                const newQty = isTransfer
+                    ? `<span class="qty-note">${item.shop}: <strong>${item.newQtyFrom}</strong> · ${item.toShop}: <strong>${item.newQtyTo}</strong></span>`
+                    : `<span class="qty-note"><strong>${item.newQtyFrom}</strong></span>`;
+
+                html += `<tr>
+                    <td data-label="Date &amp; time"><span class="timestamp-cell">${formatTimestamp(item.timestamp)}</span></td>
+                    <td data-label="User"><span class="user-tag"><i class="fas fa-user" style="margin-right:4px;"></i>${item.user}</span></td>
+                    <td data-label="Action"><span class="action-tag ${isTransfer ? 'transfer' : 'update'}">${item.action}</span></td>
+                    <td data-label="Brand"><span class="brand-tag"><i class="fas fa-circle" style="color:#c53535; font-size:0.5rem; margin-right:6px;"></i>${item.brand}</span></td>
+                    <td data-label="Size"><span class="size-tag">${item.size}</span></td>
+                    <td data-label="Shop(s)"><span class="movement-cell">${movement}</span></td>
+                    <td data-label="Change"><span class="change-badge ${isPos ? 'pos' : 'neg'}"><i class="fas ${isPos ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${changeText}</span></td>
+                    <td data-label="New Qty">${newQty}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=getHistory`, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message || 'Apps Script reported an error');
+                history = result.rows || [];
+                renderTable();
+            } catch (error) {
+                console.error('Load error:', error);
+                history = [];
+                tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><i class="fas fa-triangle-exclamation"></i> unable to load history: ${error.message}</td></tr>`;
+            }
+        }
+
+        searchInput.addEventListener('input', () => {
+            searchQuery = searchInput.value.trim();
+            renderTable();
+        });
+
+        loadHistory();
+    })();
+</script>
+</body>
+</html>
